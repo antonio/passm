@@ -1,0 +1,24 @@
+#!/bin/bash
+#/ passm: password manager
+#/
+#/ passm sync <entry> - sync pass and lpass
+
+usage () {
+  cat $0 | tail -n +2 | grep "^#/" | cut -c4-
+  exit 1
+}
+
+if [ $# -eq 0 ]; then
+  usage
+fi
+
+COMMAND=$1
+shift
+
+case $COMMAND in
+  sync)
+
+    ;;
+  *)
+    usage
+esac
