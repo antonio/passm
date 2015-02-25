@@ -2,6 +2,11 @@
 #/ passm: password manager
 #/
 #/ passm sync <entry> - sync pass and lpass
+#/
+#/ Environment variables used:
+#/ - LPASS_USERNAME
+
+# TODO: Display usage if LPASS_USERNAME is missing
 
 usage () {
   cat $0 | tail -n +2 | grep "^#/" | cut -c4-
@@ -12,12 +17,17 @@ if [ $# -eq 0 ]; then
   usage
 fi
 
+TMPFILE=$(mktemp /tmp/passm.XXXXXX)
 COMMAND=$1
 shift
 
 case $COMMAND in
   sync)
-
+    lpass ls 2>&1 | tee $TMPFILE >/dev/null
+    LPASS_STATUS=$(cat $TMPFILE)
+    if [[ $LPASS_STATUS =~ "Could not find decryption key" ]]; then
+      lpass login $LPASS_USERNAME
+    fi
     ;;
   *)
     usage
