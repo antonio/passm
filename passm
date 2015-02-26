@@ -32,3 +32,5 @@ case $COMMAND in
   *)
     usage
 esac
+
+rm -f $TMPFILE
