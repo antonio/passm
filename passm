@@ -28,6 +28,23 @@ case $COMMAND in
     if [[ $LPASS_STATUS =~ "Could not find decryption key" ]]; then
       lpass login $LPASS_USERNAME
     fi
+    wallet=$(cat <(lpass export))
+    url=$1
+
+    # is there an entry?
+    if echo "$wallet" | grep -q $url; then
+      echo "Existing!"
+      ## edit it if necessary
+    else
+      # TODO: Parse from $wallet
+      username=$(pass show web/$url | grep username | cut -d ' ' -f2)
+      password=$(pass show web/$url | head -1)
+      echo $url | lpass edit --non-interactive --url $url
+      lpass sync
+      uid=$(lpass ls | grep $url | cut -d ' ' -f3 | rev | cut -c2- | rev)
+      echo $username | lpass edit --non-interactive --username $uid
+      echo $password | lpass edit --non-interactive --password $uid
+    fi
     ;;
   *)
     usage
