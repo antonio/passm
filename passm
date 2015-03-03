@@ -29,19 +29,21 @@ case $COMMAND in
       lpass login $LPASS_USERNAME
     fi
     wallet=$(cat <(lpass export))
-    url=$1
+    entry=$1
 
     # is there an entry?
-    if echo "$wallet" | grep -q $url; then
+    if echo "$wallet" | grep -q $entry; then
       echo "Existing!"
       ## edit it if necessary
     else
       # TODO: Parse from $wallet
-      username=$(pass show web/$url | grep username | cut -d ' ' -f2)
-      password=$(pass show web/$url | head -1)
-      echo $url | lpass edit --non-interactive --url $url
+      password=$(pass show web/$entry | head -1)
+      username=$(pass show web/$entry | grep username | cut -d ' ' -f2)
+      url=$(pass show web/$entry | grep url | cut -d ' ' -f2)
+      name=$(echo $entry | sed 's/http:\/\///' | sed 's/www\.//')
+      echo $url | lpass edit --non-interactive --url $name
       lpass sync
-      uid=$(lpass ls | grep $url | cut -d ' ' -f3 | rev | cut -c2- | rev)
+      uid=$(lpass ls | grep $name | cut -d ' ' -f3 | rev | cut -c2- | rev)
       echo $username | lpass edit --non-interactive --username $uid
       echo $password | lpass edit --non-interactive --password $uid
     fi
