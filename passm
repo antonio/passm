@@ -21,35 +21,46 @@ TMPFILE=$(mktemp /tmp/passm.XXXXXX)
 COMMAND=$1
 shift
 
+lpass ls 2>&1 | tee $TMPFILE >/dev/null
+LPASS_STATUS=$(cat $TMPFILE)
+if [[ $LPASS_STATUS =~ "Could not find decryption key" ]]; then
+  lpass login $LPASS_USERNAME
+fi
+WALLET=$(cat <(lpass export))
+rm -f $TMPFILE
+
+sync () {
+  local entry=$1
+  local password=$(pass show web/$entry | head -1)
+  local username=$(pass show web/$entry | grep username | cut -d ' ' -f2)
+  local url=$(pass show web/$entry | grep url | cut -d ' ' -f2)
+  local name=$(echo $entry | sed 's/http:\/\///' | sed 's/www\.//')
+  echo $url | lpass edit --non-interactive --url $name
+  lpass sync
+  uid=$(lpass ls | grep $name | cut -d ' ' -f3 | rev | cut -c2- | rev)
+  echo $username | lpass edit --non-interactive --username $uid
+  echo $password | lpass edit --non-interactive --password $uid
+  sleep 2
+}
+
 case $COMMAND in
+  sync-all)
+    for entry in $(find ~/.password-store/web -type f -name "*.gpg" | cut -d/ -f6- | sed 's/.gpg$//'); do
+      echo syncing $entry
+      sync $entry
+    done
+    ;;
   sync)
-    lpass ls 2>&1 | tee $TMPFILE >/dev/null
-    LPASS_STATUS=$(cat $TMPFILE)
-    if [[ $LPASS_STATUS =~ "Could not find decryption key" ]]; then
-      lpass login $LPASS_USERNAME
-    fi
-    wallet=$(cat <(lpass export))
     entry=$1
 
     # is there an entry?
-    if echo "$wallet" | grep -q $entry; then
-      echo "Existing!"
-      ## edit it if necessary
+    if echo "$WALLET" | grep -q $entry; then
+      echo "Existing, but editing is not implemented yet!"
+      ## edit
     else
-      # TODO: Parse from $wallet
-      password=$(pass show web/$entry | head -1)
-      username=$(pass show web/$entry | grep username | cut -d ' ' -f2)
-      url=$(pass show web/$entry | grep url | cut -d ' ' -f2)
-      name=$(echo $entry | sed 's/http:\/\///' | sed 's/www\.//')
-      echo $url | lpass edit --non-interactive --url $name
-      lpass sync
-      uid=$(lpass ls | grep $name | cut -d ' ' -f3 | rev | cut -c2- | rev)
-      echo $username | lpass edit --non-interactive --username $uid
-      echo $password | lpass edit --non-interactive --password $uid
+      sync $entry
     fi
     ;;
   *)
     usage
 esac
-
-rm -f $TMPFILE
