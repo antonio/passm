@@ -43,7 +43,26 @@ sync () {
   sleep 2
 }
 
+list-pass () {
+  find ~/.password-store/web -type f | cut -d/ -f6- | rev | cut -d. -f2- | rev | sort
+}
+
+list-lpass () {
+  lpass ls | cut -d' ' -f1 | sort
+}
+
 case $COMMAND in
+  list)
+    backend=$1
+    if [ "$backend" == "pass" ]; then
+      list-pass
+    elif [ "$backend" == "lpass" ]; then
+      list-lpass
+    else
+      echo "Backend not supported" >&2
+      exit 1
+    fi
+    ;;
   sync-all)
     for entry in $(find ~/.password-store/web -type f -name "*.gpg" | cut -d/ -f6- | sed 's/.gpg$//'); do
       echo syncing $entry
