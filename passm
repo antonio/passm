@@ -1,7 +1,10 @@
 #!/bin/bash
 #/ passm: password manager
 #/
+#/ passm list <backend> - list the entries in the backend
+#/ passm diff - diff the passwords lists
 #/ passm sync <entry> - sync pass and lpass
+#/ passm sync-all - sync all the entries
 #/
 #/ Environment variables used:
 #/ - LPASS_USERNAME
@@ -40,7 +43,6 @@ sync () {
   uid=$(lpass ls | grep $name | cut -d ' ' -f3 | rev | cut -c2- | rev)
   echo $username | lpass edit --non-interactive --username $uid
   echo $password | lpass edit --non-interactive --password $uid
-  sleep 2
 }
 
 list-pass () {
@@ -62,6 +64,9 @@ case $COMMAND in
       echo "Backend not supported" >&2
       exit 1
     fi
+    ;;
+  diff)
+    diff -u <(list-pass) <(list-lpass)
     ;;
   sync-all)
     for entry in $(find ~/.password-store/web -type f -name "*.gpg" | cut -d/ -f6- | sed 's/.gpg$//'); do
