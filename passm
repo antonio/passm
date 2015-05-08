@@ -5,6 +5,7 @@
 #/ passm diff - diff the passwords lists
 #/ passm sync <entry> - sync pass and lpass
 #/ passm sync-all - sync all the entries
+#/ passm sync-new - sync new entries
 #/
 #/ Environment variables used:
 #/ - LPASS_USERNAME
@@ -53,6 +54,10 @@ list-lpass () {
   lpass ls | cut -d' ' -f1 | sort
 }
 
+entries-diff () {
+  diff -u <(list-pass) <(list-lpass)
+}
+
 case $COMMAND in
   list)
     backend=$1
@@ -66,11 +71,17 @@ case $COMMAND in
     fi
     ;;
   diff)
-    diff -u <(list-pass) <(list-lpass)
+    entries-diff
     ;;
   sync-all)
     for entry in $(find ~/.password-store/web -type f -name "*.gpg" | cut -d/ -f6- | sed 's/.gpg$//'); do
       echo syncing $entry
+      sync $entry
+    done
+    ;;
+  sync-new)
+    for entry in $(entries-diff | grep "^-[^-]" | cut -c2-); do
+      echo "Syncing $entry"
       sync $entry
     done
     ;;
